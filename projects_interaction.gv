@@ -1,0 +1,65 @@
+// semanticClimate / petermr projects: interactions and main data flow
+// Date: 2026-02-24 (system date of generation)
+// Render: dot -Tsvg projects_interaction.gv -o projects_interaction.svg
+
+digraph G {
+    rankdir=TB;
+    node [shape=box, style=rounded, fontname="Helvetica"];
+    edge [fontname="Helvetica", fontsize=10];
+
+    // External / data sources
+    subgraph cluster_sources {
+        label="Data sources";
+        fontsize=12;
+        EUPMC [label="Europe PMC\n(biorxiv, medrxiv,\nCrossref, OpenAlex, …)"];
+    }
+
+    // Core download & corpus
+    subgraph cluster_download {
+        label="Download & corpus";
+        fontsize=12;
+        pygetpapers [label="pygetpapers\n(CProject-like output:\nfulltext.xml, .json, .pdf, .html)"];
+        semantic_corpus [label="semantic_corpus\n(create, search, download,\nBAGIT ingest)"];
+    }
+
+    // Libraries & transformation
+    subgraph cluster_libs {
+        label="Libraries & transformation";
+        fontsize=12;
+        amilib [label="amilib\n(DICT, HTML, PDF, SEARCH)"];
+        docanalysis [label="docanalysis\n(section, NER, ami-dict, abbrev)"];
+        txt2phrases [label="txt2phrases\n(pdf2txt, html2txt,\nkeyphrases, auto)"];
+    }
+
+    // Applications & storage
+    subgraph cluster_apps {
+        label="Applications & storage";
+        fontsize=12;
+        encyclopedia [label="encyclopedia\n(keyword extraction,\ndictionary, browser)"];
+        pyamiimage [label="pyamiimage\n(diagram/OCR extraction)"];
+    }
+
+    // Data flow: sources -> download tools
+    EUPMC -> pygetpapers [label="query, API"];
+    EUPMC -> semantic_corpus [label="search, download"];
+
+    // pygetpapers output consumed by
+    pygetpapers -> docanalysis [label="CProject\nxml, json"];
+    pygetpapers -> semantic_corpus [label="ingest\nxml, pdf, json"];
+    pygetpapers -> txt2phrases [label="auto pipeline\npdf, html"];
+
+    // docanalysis outputs
+    docanalysis -> amilib [label="AMI dict xml\nannotation input"];
+
+    // amilib as library
+    amilib -> encyclopedia [label="HtmlLib, AmiDict,\nWikimedia"];
+    amilib -> docanalysis [label="(future integration)"];
+
+    // encyclopedia can use pygetpapers for corpus
+    pygetpapers -> encyclopedia [label="corpus creation\n(demo/notebook)"];
+
+    // txt2phrases outputs (keywords) can feed dictionaries / analysis
+    txt2phrases -> encyclopedia [label="keywords csv\n(optional)"];
+
+    // overview: this repo (docs/spec); pyamiimage is standalone (diagrams only)
+}
